@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Smart MCQ System - Sign Up</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header>Create Student Account</header>
+
+<div class="container">
+    <div class="card">
+        <h2>Student Registration</h2>
+        
+        <input type="text" id="name" placeholder="Full Name" required>
+        
+        <input type="email" id="email" placeholder="Email Address" required>
+        
+        <input type="password" id="password" placeholder="Password" required>
+        
+        <input type="password" id="confirmPassword" placeholder="Confirm Password" required>
+        
+        <select id="role" required>
+            <option value="student">Student</option>
+        </select>
+        
+        <button onclick="signup()">Sign Up</button>
+    </div>
+
+    <div class="card text-center">
+        <p>Already have an account? <a href="index.html">Login here</a></p>
+    </div>
+</div>
+
+<script>
+    function signup() {
+        const name = document.getElementById("name").value.trim();
+        const email = document.getElementById("email").value.trim();
+        const password = document.getElementById("password").value;
+        const confirmPassword = document.getElementById("confirmPassword").value;
+        const role = document.getElementById("role").value;
+
+        if (!name || !email || !password || !confirmPassword) {
+            alert("Please fill in all fields");
+            return;
+        }
+
+        if (password !== confirmPassword) {
+            alert("Passwords do not match");
+            return;
+        }
+
+        if (password.length < 6) {
+            alert("Password must be at least 6 characters long");
+            return;
+        }
+
+        // Check if user already exists
+        const existingUser = localStorage.getItem(email);
+        if (existingUser) {
+            alert("Email already registered. Please login.");
+            return;
+        }
+
+        const user = { 
+            name, 
+            email, 
+            password, 
+            role,
+            results: [],
+            createdAt: new Date().toLocaleString()
+        };
+
+        localStorage.setItem(email, JSON.stringify(user));
+        
+        // Also maintain students array for easy access
+        let students = JSON.parse(localStorage.getItem("students") || "[]");
+        students.push({ name, email, results: [] });
+        localStorage.setItem("students", JSON.stringify(students));
+
+        alert("Account created successfully! Please login.");
+        window.location.href = "index.html";
+    }
+</script>
+
+</body>
+</html>

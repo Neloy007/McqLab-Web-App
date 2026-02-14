@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Student Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header>
+    Welcome, <span id="studentName"></span>!
+    <button class="logout" onclick="logout()">Logout</button>
+</header>
+
+<div class="container">
+
+    <div class="card">
+        <h2>📋 Available Exams</h2>
+        <div id="examList"></div>
+    </div>
+
+    <div class="card">
+        <h2>📊 My Results</h2>
+        <button class="view-results" onclick="goToResults()">View My Exam History</button>
+    </div>
+
+</div>
+
+<script>
+    // Check authentication
+    const loggedInUser = localStorage.getItem("loggedInUser");
+    const role = localStorage.getItem("loggedInRole");
+    const userName = localStorage.getItem("userName");
+    
+    if (!loggedInUser || role !== "student") {
+        alert("Please login as student");
+        window.location.href = "index.html";
+    }
+
+    document.getElementById("studentName").innerText = userName || "Student";
+
+    function loadExams() {
+        const container = document.getElementById("examList");
+        const exams = JSON.parse(localStorage.getItem("exams") || "[]");
+        
+        container.innerHTML = "";
+        
+        if (exams.length === 0) {
+            container.innerHTML = "<p>No exams available at the moment</p>";
+            return;
+        }
+
+        exams.forEach(exam => {
+            container.innerHTML += `
+                <div class="exam-item">
+                    <p>
+                        <strong>${exam.name}</strong>
+                        <br>Duration: ${exam.duration} minutes
+                        <br>Questions: ${exam.questionCount}
+                        <br><small>Created: ${exam.createdAt}</small>
+                        <button onclick="startExam('${exam.key}')" class="start-exam">Start Exam</button>
+                    </p>
+                </div>
+            `;
+        });
+    }
+
+    function startExam(examKey) {
+        // Check if student has already taken this exam
+        const userEmail = loggedInUser;
+        const userData = JSON.parse(localStorage.getItem(userEmail));
+        
+        if (userData && userData.results) {
+            const examName = examKey.split("_")[1];
+            const alreadyTaken = userData.results.some(r => r.examName === examName);
+            
+            if (alreadyTaken) {
+                if (!confirm("You have already taken this exam. Do you want to retake it?")) {
+                    return;
+                }
+            }
+        }
+        
+        localStorage.setItem("currentExam", examKey);
+        window.location.href = "exam.html";
+    }
+
+    function goToResults() {
+        window.location.href = "result.html";
+    }
+
+    function logout() {
+        localStorage.removeItem("loggedInUser");
+        localStorage.removeItem("loggedInRole");
+        localStorage.removeItem("userName");
+        localStorage.removeItem("currentExam");
+        window.location.href = "index.html";
+    }
+
+    // Load exams on page load
+    loadExams();
+</script>
+
+</body>
+</html>

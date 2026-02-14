@@ -1,0 +1,553 @@
+/* ==================================
+   Global Styles & Reset
+================================== */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    margin: 0;
+    padding: 0;
+}
+
+/* ==================================
+   Header Styles
+================================== */
+header {
+    background: rgba(44, 62, 70, 0.95);
+    color: white;
+    padding: 1.2rem 2rem;
+    font-size: 1.8rem;
+    font-weight: bold;
+    text-align: center;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    backdrop-filter: blur(10px);
+    position: relative;
+}
+
+/* ==================================
+   Container
+================================== */
+.container {
+    max-width: 1200px;
+    margin: 2rem auto;
+    padding: 0 20px;
+    animation: slideIn 0.5s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ==================================
+   Cards - Main UI Component
+================================== */
+.card {
+    background: white;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+    transition: all 0.3s ease;
+    border: 1px solid rgba(255,255,255,0.1);
+    backdrop-filter: blur(5px);
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 40px rgba(0,0,0,0.2);
+}
+
+.card h2 {
+    color: #2c3e50;
+    margin-bottom: 1.5rem;
+    font-size: 1.8rem;
+    border-bottom: 3px solid #667eea;
+    padding-bottom: 0.5rem;
+    display: inline-block;
+}
+
+.card h3 {
+    color: #34495e;
+    margin: 1rem 0;
+    font-size: 1.3rem;
+}
+
+/* ==================================
+   Form Elements
+================================== */
+input, textarea, select {
+    width: 100%;
+    padding: 12px 15px;
+    margin: 8px 0 16px 0;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    background: #f8f9fa;
+}
+
+input:focus, textarea:focus, select:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    background: white;
+}
+
+input:hover, textarea:hover, select:hover {
+    border-color: #764ba2;
+}
+
+textarea {
+    min-height: 200px;
+    resize: vertical;
+    font-family: 'Courier New', monospace;
+    line-height: 1.5;
+}
+
+/* ==================================
+   Buttons - All Variants
+================================== */
+button {
+    padding: 12px 25px;
+    margin: 5px 10px 5px 0;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: #27ae60;
+    color: white;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+    background: #219150;
+}
+
+button:active {
+    transform: translateY(0);
+}
+
+button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Danger/Delete Buttons */
+button.danger {
+    background: #e74c3c;
+}
+
+button.danger:hover {
+    background: #c0392b;
+}
+
+/* Logout Button - Special Position */
+button.logout {
+    background: #c0392b;
+    position: absolute;
+    right: 2rem;
+    top: 50%;
+    transform: translateY(-50%);
+    padding: 10px 20px;
+    font-size: 1rem;
+}
+
+button.logout:hover {
+    background: #a93226;
+    transform: translateY(-50%) scale(1.05);
+}
+
+/* View Results Button */
+button.view-results {
+    background: #2980b9;
+}
+
+button.view-results:hover {
+    background: #2471a3;
+}
+
+/* Exam Action Buttons */
+button.start-exam {
+    background: #f39c12;
+}
+
+button.start-exam:hover {
+    background: #e67e22;
+}
+
+/* ==================================
+   Links
+================================== */
+a {
+    color: #667eea;
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+a:hover {
+    color: #764ba2;
+    text-decoration: underline;
+}
+
+/* ==================================
+   Question List Items
+================================== */
+.question-item {
+    background: #f8f9fa;
+    padding: 15px;
+    margin: 10px 0;
+    border-radius: 10px;
+    border-left: 4px solid #667eea;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    transition: all 0.3s ease;
+}
+
+.question-item:hover {
+    background: #f1f3f4;
+    transform: translateX(5px);
+}
+
+.question-item strong {
+    color: #2c3e50;
+    font-size: 1.1rem;
+}
+
+/* ==================================
+   Exam Taking Interface
+================================== */
+#examCard {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+#questionArea {
+    font-size: 1.2rem;
+    margin: 20px 0;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 10px;
+    border-left: 5px solid #667eea;
+}
+
+#optionsArea {
+    margin: 20px 0;
+}
+
+#optionsArea p {
+    margin: 15px 0;
+    padding: 10px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+#optionsArea p:hover {
+    background: #e8eef7;
+    transform: translateX(5px);
+}
+
+#optionsArea input[type="radio"] {
+    width: auto;
+    margin-right: 10px;
+    cursor: pointer;
+}
+
+#optionsArea label {
+    font-size: 1.1rem;
+    cursor: pointer;
+    color: #2c3e50;
+}
+
+/* ==================================
+   Results Display
+================================== */
+.result-card {
+    background: white;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    border-radius: 12px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    border-left: 5px solid #27ae60;
+    transition: all 0.3s ease;
+}
+
+.result-card:hover {
+    transform: translateX(5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+.result-card h3 {
+    color: #2c3e50;
+    margin-bottom: 1rem;
+    font-size: 1.4rem;
+}
+
+.result-card p {
+    margin: 8px 0;
+    color: #34495e;
+    font-size: 1.1rem;
+}
+
+.pass {
+    color: #27ae60;
+    font-weight: bold;
+    font-size: 1.2rem;
+    padding: 5px 10px;
+    background: #e8f5e9;
+    border-radius: 5px;
+    display: inline-block;
+}
+
+.fail {
+    color: #e74c3c;
+    font-weight: bold;
+    font-size: 1.2rem;
+    padding: 5px 10px;
+    background: #ffebee;
+    border-radius: 5px;
+    display: inline-block;
+}
+
+/* ==================================
+   Lists & Containers
+================================== */
+#examList div, #savedExams div {
+    background: #f8f9fa;
+    padding: 15px;
+    margin: 10px 0;
+    border-radius: 10px;
+    transition: all 0.3s ease;
+}
+
+#examList div:hover, #savedExams div:hover {
+    background: #edf2f7;
+    transform: translateX(5px);
+}
+
+.exam-item {
+    border-left: 4px solid #3498db;
+}
+
+.exam-item p {
+    margin: 5px 0;
+}
+
+.exam-item small {
+    color: #7f8c8d;
+    font-size: 0.85rem;
+}
+
+/* ==================================
+   Select Dropdowns
+================================== */
+select {
+    appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 1rem center;
+    background-size: 1em;
+    padding-right: 2.5rem;
+}
+
+/* ==================================
+   Status Messages
+================================== */
+#resultDisplay {
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 10px;
+    line-height: 1.8;
+    font-size: 1.1rem;
+}
+
+#resultDisplay p {
+    margin: 10px 0;
+}
+
+/* ==================================
+   Timer Styles
+================================== */
+#timer {
+    background: rgba(0,0,0,0.2);
+    padding: 5px 15px;
+    border-radius: 20px;
+    font-weight: normal;
+}
+
+/* ==================================
+   Statistics Cards
+================================== */
+.stat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    margin: 20px 0;
+}
+
+.stat-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 20px;
+    border-radius: 10px;
+    text-align: center;
+}
+
+.stat-card h3 {
+    margin: 0;
+    font-size: 1rem;
+    opacity: 0.9;
+}
+
+.stat-card p {
+    font-size: 2rem;
+    margin: 10px 0 0 0;
+    font-weight: bold;
+}
+
+/* ==================================
+   Responsive Design
+================================== */
+@media (max-width: 768px) {
+    header {
+        font-size: 1.4rem;
+        padding: 1rem;
+        padding-bottom: 3rem;
+    }
+    
+    button.logout {
+        position: static;
+        transform: none;
+        margin-top: 10px;
+        width: 100%;
+    }
+    
+    .container {
+        padding: 10px;
+    }
+    
+    .card {
+        padding: 1.5rem;
+    }
+    
+    button {
+        width: 100%;
+        margin: 5px 0;
+    }
+    
+    #examList p, #savedExams p {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    #examList button, #savedExams button {
+        width: 100%;
+        margin-top: 10px;
+    }
+    
+    .stat-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ==================================
+   Loading States
+================================== */
+.loading {
+    opacity: 0.6;
+    pointer-events: none;
+    position: relative;
+}
+
+.loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 30px;
+    height: 30px;
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #667eea;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: translate(-50%, -50%) rotate(0deg); }
+    100% { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+/* ==================================
+   Print Styles
+================================== */
+@media print {
+    body {
+        background: white;
+    }
+    
+    button, .logout, .view-results {
+        display: none;
+    }
+    
+    .card {
+        box-shadow: none;
+        border: 1px solid #ddd;
+    }
+}
+
+/* ==================================
+   Utility Classes
+================================== */
+.text-center {
+    text-align: center;
+}
+
+.mt-2 {
+    margin-top: 1rem;
+}
+
+.mb-2 {
+    margin-bottom: 1rem;
+}
+
+.hidden {
+    display: none;
+}
+
+/* ==================================
+   Scrollbar Styling
+================================== */
+::-webkit-scrollbar {
+    width: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #667eea;
+    border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #764ba2;
+}

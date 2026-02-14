@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Smart MCQ System - Login</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header>Smart MCQ System</header>
+
+<div class="container">
+    <div class="card">
+        <h2>Login to Your Account</h2>
+        
+        <input type="email" id="email" placeholder="Email Address" required>
+        
+        <input type="password" id="password" placeholder="Password" required>
+        
+        <select id="role" required>
+            <option value="">Select Role</option>
+            <option value="teacher">Teacher</option>
+            <option value="student">Student</option>
+        </select>
+        
+        <button onclick="login()">Login</button>
+    </div>
+
+    <div class="card text-center">
+        <p>New student? <a href="signup.html">Create an account here</a></p>
+    </div>
+</div>
+
+<script>
+    function login() {
+        const email = document.getElementById("email").value.trim();
+        const password = document.getElementById("password").value;
+        const role = document.getElementById("role").value;
+
+        if (!email || !password || !role) {
+            alert("Please fill in all fields");
+            return;
+        }
+
+        const user = JSON.parse(localStorage.getItem(email));
+
+        if (user && user.password === password && user.role === role) {
+            localStorage.setItem("loggedInUser", email);
+            localStorage.setItem("loggedInRole", role);
+            localStorage.setItem("userName", user.name);
+
+            if (role === "teacher") {
+                window.location.href = "teacher.html";
+            } else {
+                window.location.href = "student.html";
+            }
+        } else {
+            alert("Invalid credentials or role doesn't match");
+        }
+    }
+</script>
+
+</body>
+</html>

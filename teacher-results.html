@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Teacher Results Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header>
+    Teacher Results Dashboard
+    <button class="logout" onclick="logout()">Logout</button>
+</header>
+
+<div class="container">
+
+    <div class="card">
+        <h2>📊 Overall Statistics</h2>
+        <div id="overallStats"></div>
+    </div>
+
+    <div class="card">
+        <h2>🔍 Filter Results</h2>
+        
+        <label>Select Exam:</label>
+        <select id="examFilter" onchange="filterResults()">
+            <option value="all">All Exams</option>
+        </select>
+        
+        <label>Select Student:</label>
+        <select id="studentFilter" onchange="filterResults()">
+            <option value="all">All Students</option>
+        </select>
+        
+        <button onclick="resetFilters()">Reset Filters</button>
+    </div>
+
+    <div class="card">
+        <h2>📋 Results</h2>
+        <div id="resultsList"></div>
+    </div>
+
+</div>
+
+<script>
+    const role = localStorage.getItem("loggedInRole");
+    if (!role || role !== "teacher") {
+        alert("Please login as teacher");
+        window.location.href = "index.html";
+    }
+
+    let allResults = [];
+    let exams = [];
+
+    function loadData() {
+        // Load all results
+        allResults = JSON.parse(localStorage.getItem("allResults") || "[]");
+        
+        // Load exams
+        exams = JSON.parse(localStorage.getItem("exams") || "[]");
+        
+        populateFilters();
+        showOverallStats();
+        displayResults();
+    }
+
+    function populateFilters() {
+        const examFilter = document.getElementById("examFilter");
+        const studentFilter = document.getElementById("studentFilter");
+        
+        // Get unique exam names
+        const examNames = [...new Set(allResults.map(r => r.examName))];
+        examNames.sort().forEach(exam => {
+            examFilter.innerHTML += `<option value="${exam}">${exam}</option>`;
+        });
+        
+        // Get unique students
+        const students = [...new Set(allResults.map(r => r.studentName))];
+        students.sort().forEach(student => {
+            studentFilter.innerHTML += `<option value="${student}">${student}</option>`;
+        });
+    }
+
+    function showOverallStats() {
+        const statsDiv = document.getElementById("overallStats");
+        
+        if (allResults.length === 0) {
+            statsDiv.innerHTML = "<p>No results available yet</p>";
+            return;
+        }
+
+        const totalExams = allResults.length;
+        const totalStudents = [...new Set(allResults.map(r => r.student))].length;
+        const avgPercentage = (allResults.reduce((acc, r) => acc + parseFloat(r.percentage), 0) / totalExams).toFixed(1);
+        const passedExams = allResults.filter(r => parseFloat(r.percentage) >= 40).length;
+
+        statsDiv.innerHTML = `
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
+                <div style="background: #3498db; color: white; padding: 20px; border-radius: 10px; text-align: center;">
+                    <h3 style="margin: 0;">📝 Total Exams Taken</h3>
+                    <p style="font-size: 2rem; margin: 10px 0;">${totalExams}</p>
+                </div>
+                <div style="background: #27ae60; color: white; padding: 20px; border-radius: 10px; text-align: center;">
+                    <h3 style="margin: 0;">👥 Total Students</h3>
+                    <p style="font-size: 2rem; margin: 10px 0;">${totalStudents}</p>
+                </div>
+                <div style="background: #e67e22; color: white; padding: 20px; border-radius: 10px; text-align: center;">
+                    <h3 style="margin: 0;">📊 Average Score</h3>
+                    <p style="font-size: 2rem; margin: 10px 0;">${avgPercentage}%</p>
+                </div>
+                <div style="background: #9b59b6; color: white; padding: 20px; border-radius: 10px; text-align: center;">
+                    <h3 style="margin: 0;">✅ Pass Rate</h3>
+                    <p style="font-size: 2rem; margin: 10px 0;">${((passedExams/totalExams)*100).toFixed(1)}%</p>
+                </div>
+            </div>
+        `;
+    }
+
+    function filterResults() {
+        const examFilter = document.getElementById("examFilter").value;
+        const studentFilter = document.getElementById("studentFilter").value;
+        
+        let filtered = allResults;
+        
+        if (examFilter !== "all") {
+            filtered = filtered.filter(r => r.examName === examFilter);
+        }
+        
+        if (studentFilter !== "all") {
+            filtered = filtered.filter(r => r.studentName === studentFilter);
+        }
+        
+        displayResults(filtered);
+    }
+
+    function displayResults(filteredResults = allResults) {
+        const resultsDiv = document.getElementById("resultsList");
+        
+        if (filteredResults.length === 0) {
+            resultsDiv.innerHTML = "<p>No results found</p>";
+            return;
+        }
+
+        // Calculate summary for filtered results
+        const avgScore = (filteredResults.reduce((acc, r) => acc + parseFloat(r.percentage), 0) / filteredResults.length).toFixed(1);
+
+        resultsDiv.innerHTML = `
+            <p><strong>Showing ${filteredResults.length} results | Average: ${avgScore}%</strong></p>
+        `;
+
+        filteredResults.sort((a, b) => new Date(b.date) - new Date(a.date)).forEach(result => {
+            const status = parseFloat(result.percentage) >= 40 ? "Pass" : "Fail";
+            const statusClass = parseFloat(result.percentage) >= 40 ? "pass" : "fail";
+
+            resultsDiv.innerHTML += `
+                <div class="result-card">
+                    <h3>${result.examName}</h3>
+                    <p><strong>Student:</strong> ${result.studentName} (${result.student})</p>
+                    <p><strong>Date:</strong> ${result.date}</p>
+                    <p><strong>Score:</strong> ${result.score}/${result.total}</p>
+                    <p><strong>Percentage:</strong> ${result.percentage}%</p>
+                    <p><strong>Status:</strong> <span class="${statusClass}">${status}</span></p>
+                </div>
+            `;
+        });
+    }
+
+    function resetFilters() {
+        document.getElementById("examFilter").value = "all";
+        document.getElementById("studentFilter").value = "all";
+        displayResults();
+    }
+
+    function logout() {
+        localStorage.removeItem("loggedInUser");
+        localStorage.removeItem("loggedInRole");
+        window.location.href = "index.html";
+    }
+
+    // Load data on page load
+    loadData();
+</script>
+
+</body>
+</html>

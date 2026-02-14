@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Take Exam</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header>
+    <span id="examTitle"></span>
+    <span id="timer" style="float: right; font-size: 1.2rem;">Time Left: <span id="timeDisplay">00:00</span></span>
+    <button class="logout" onclick="logout()">Logout</button>
+</header>
+
+<div class="container">
+    <div class="card" id="examCard">
+        <div id="questionArea"></div>
+        <div id="optionsArea"></div>
+        
+        <div style="display: flex; justify-content: space-between; margin-top: 20px;">
+            <button id="prevBtn" onclick="prevQuestion()" style="background: #95a5a6;">Previous</button>
+            <span id="questionCounter">Question 1 of <span id="totalQuestions"></span></span>
+            <button id="nextBtn" onclick="nextQuestion()">Next</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Check authentication
+    const username = localStorage.getItem("loggedInUser");
+    const role = localStorage.getItem("loggedInRole");
+
+    if (!username || role !== "student") {
+        alert("Please login as student");
+        window.location.href = "index.html";
+    }
+
+    const examKey = localStorage.getItem("currentExam");
+    if (!examKey) {
+        alert("No exam selected");
+        window.location.href = "student.html";
+    }
+
+    // Load exam data
+    const exam = JSON.parse(localStorage.getItem(examKey));
+    if (!exam) {
+        alert("Exam data not found");
+        window.location.href = "student.html";
+    }
+
+    // Exam state
+    let currentQ = 0;
+    let answers = new Array(exam.questions.length).fill(null);
+    let score = 0;
+    let timeLeft = exam.duration * 60; // Convert to seconds
+    let timerInterval;
+
+    // DOM elements
+    const examTitle = document.getElementById("examTitle");
+    const questionArea = document.getElementById("questionArea");
+    const optionsArea = document.getElementById("optionsArea");
+    const nextBtn = document.getElementById("nextBtn");
+    const prevBtn = document.getElementById("prevBtn");
+    const questionCounter = document.getElementById("questionCounter");
+    const totalQuestionsSpan = document.getElementById("totalQuestions");
+    const timeDisplay = document.getElementById("timeDisplay");
+
+    // Initialize exam
+    examTitle.innerText = exam.name;
+    totalQuestionsSpan.innerText = exam.questions.length;
+    
+    startTimer();
+    showQuestion();
+
+    function startTimer() {
+        timerInterval = setInterval(() => {
+            timeLeft--;
+            updateTimerDisplay();
+            
+            if (timeLeft <= 0) {
+                clearInterval(timerInterval);
+                alert("Time's up! Submitting exam...");
+                finishExam();
+            }
+        }, 1000);
+    }
+
+    function updateTimerDisplay() {
+        const minutes = Math.floor(timeLeft / 60);
+        const seconds = timeLeft % 60;
+        timeDisplay.innerText = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        
+        // Change color when less than 5 minutes left
+        if (timeLeft < 300) {
+            timeDisplay.style.color = "#e74c3c";
+        }
+    }
+
+    function showQuestion() {
+        const q = exam.questions[currentQ];
+        questionArea.innerHTML = `<h3>Question ${currentQ + 1} of ${exam.questions.length}</h3>
+                                 <p style="font-size: 1.2rem;">${q.question}</p>`;
+        
+        optionsArea.innerHTML = "";
+        
+        q.options.forEach((opt, i) => {
+            const letter = String.fromCharCode(65 + i); // A, B, C, D
+            optionsArea.innerHTML += `
+                <p>
+                    <input type="radio" name="answer" value="${i}" id="opt${i}" 
+                        ${answers[currentQ] === i ? 'checked' : ''}>
+                    <label for="opt${i}"><strong>${letter}:</strong> ${opt}</label>
+                </p>
+            `;
+        });
+
+        // Update navigation buttons
+        prevBtn.disabled = currentQ === 0;
+        
+        if (currentQ === exam.questions.length - 1) {
+            nextBtn.innerText = "Finish";
+        } else {
+            nextBtn.innerText = "Next";
+        }
+
+        // Update counter
+        questionCounter.innerText = `Question ${currentQ + 1} of ${exam.questions.length}`;
+    }
+
+    function saveCurrentAnswer() {
+        const selected = document.querySelector('input[name="answer"]:checked');
+        if (selected) {
+            answers[currentQ] = parseInt(selected.value);
+        }
+    }
+
+    function nextQuestion() {
+        saveCurrentAnswer();
+        
+        if (currentQ === exam.questions.length - 1) {
+            // Check if all questions answered
+            const unanswered = answers.filter(a => a === null).length;
+            if (unanswered > 0) {
+                if (!confirm(`You have ${unanswered} unanswered questions. Submit anyway?`)) {
+                    return;
+                }
+            }
+            finishExam();
+        } else {
+            currentQ++;
+            showQuestion();
+        }
+    }
+
+    function prevQuestion() {
+        saveCurrentAnswer();
+        currentQ--;
+        showQuestion();
+    }
+
+    function finishExam() {
+        clearInterval(timerInterval);
+        
+        // Calculate score
+        score = answers.reduce((total, answer, index) => {
+            return total + (answer === exam.questions[index].answer ? 1 : 0);
+        }, 0);
+
+        // Save result
+        const userEmail = username;
+        const userData = JSON.parse(localStorage.getItem(userEmail));
+        
+        if (userData) {
+            if (!userData.results) userData.results = [];
+            
+            userData.results.push({
+                examName: exam.name,
+                score: score,
+                total: exam.questions.length,
+                percentage: ((score / exam.questions.length) * 100).toFixed(2),
+                date: new Date().toLocaleString(),
+                passed: score >= exam.questions.length * 0.4 // 40% passing
+            });
+            
+            localStorage.setItem(userEmail, JSON.stringify(userData));
+        }
+
+        // Save to global results
+        let allResults = JSON.parse(localStorage.getItem("allResults") || "[]");
+        allResults.push({
+            student: userEmail,
+            studentName: userData ? userData.name : "Unknown",
+            examName: exam.name,
+            score: score,
+            total: exam.questions.length,
+            percentage: ((score / exam.questions.length) * 100).toFixed(2),
+            date: new Date().toLocaleString()
+        });
+        localStorage.setItem("allResults", JSON.stringify(allResults));
+
+        alert(`Exam finished!\nYour score: ${score}/${exam.questions.length} (${((score/exam.questions.length)*100).toFixed(1)}%)`);
+        
+        localStorage.removeItem("currentExam");
+        window.location.href = "result.html";
+    }
+
+    function logout() {
+        clearInterval(timerInterval);
+        localStorage.removeItem("loggedInUser");
+        localStorage.removeItem("loggedInRole");
+        localStorage.removeItem("userName");
+        localStorage.removeItem("currentExam");
+        window.location.href = "index.html";
+    }
+</script>
+
+</body>
+</html>

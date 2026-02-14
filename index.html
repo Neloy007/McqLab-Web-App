@@ -1,63 +1,270 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Smart MCQ System - Login</title>
+    <title>Teacher Portal - Login</title>
     <link rel="stylesheet" href="style.css">
+    <!-- Firebase SDKs (compatible version) -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
 </head>
 <body>
 
-<header>Smart MCQ System</header>
+<header>Teacher Portal</header>
 
 <div class="container">
     <div class="card">
-        <h2>Login to Your Account</h2>
+        <h2>Teacher Login</h2>
         
         <input type="email" id="email" placeholder="Email Address" required>
-        
         <input type="password" id="password" placeholder="Password" required>
-        
-        <select id="role" required>
-            <option value="">Select Role</option>
-            <option value="teacher">Teacher</option>
-            <option value="student">Student</option>
-        </select>
         
         <button onclick="login()">Login</button>
     </div>
 
     <div class="card text-center">
-        <p>New student? <a href="signup.html">Create an account here</a></p>
+        <p>New teacher? <a href="#" onclick="showSignUp()">Create account here</a></p>
+    </div>
+</div>
+
+<!-- Sign Up Modal -->
+<div id="signupModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <span class="close" onclick="closeModal()">&times;</span>
+        <h2>Teacher Registration</h2>
+        
+        <input type="text" id="teacherName" placeholder="Full Name" required>
+        <input type="email" id="teacherEmail" placeholder="Email Address" required>
+        <input type="password" id="teacherPassword" placeholder="Password (min 6 characters)" required>
+        <input type="text" id="department" placeholder="Department" required>
+        
+        <button onclick="signUp()">Create Account</button>
     </div>
 </div>
 
 <script>
+    // Your Firebase configuration
+    const firebaseConfig = {
+        apiKey: "AIzaSyBvu8CUTNhoD9Brf5LLP3pWCEsUky-zcQU",
+        authDomain: "mcqlab-cc68c.firebaseapp.com",
+        projectId: "mcqlab-cc68c",
+        storageBucket: "mcqlab-cc68c.firebasestorage.app",
+        messagingSenderId: "514292628934",
+        appId: "1:514292628934:web:60879a16f0ac4b2ac986c7"
+    };
+
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    // Enable offline persistence (optional)
+    db.enablePersistence()
+        .catch((err) => {
+            if (err.code == 'failed-precondition') {
+                console.log('Multiple tabs open, persistence disabled');
+            } else if (err.code == 'unimplemented') {
+                console.log('Browser doesn\'t support persistence');
+            }
+        });
+
+    // Login function
     function login() {
         const email = document.getElementById("email").value.trim();
         const password = document.getElementById("password").value;
-        const role = document.getElementById("role").value;
 
-        if (!email || !password || !role) {
-            alert("Please fill in all fields");
+        if (!email || !password) {
+            alert("Please enter email and password");
             return;
         }
 
-        const user = JSON.parse(localStorage.getItem(email));
+        auth.signInWithEmailAndPassword(email, password)
+            .then((userCredential) => {
+                const user = userCredential.user;
+                
+                // Check if user is teacher
+                return db.collection("teachers").doc(user.uid).get();
+            })
+            .then((doc) => {
+                if (doc.exists) {
+                    localStorage.setItem("teacherId", doc.id);
+                    localStorage.setItem("teacherName", doc.data().name);
+                    localStorage.setItem("teacherEmail", doc.data().email);
+                    window.location.href = "dashboard.html";
+                } else {
+                    alert("Access denied. Teacher account not found.");
+                    auth.signOut();
+                }
+            })
+            .catch((error) => {
+                let errorMessage = "Login failed: ";
+                switch (error.code) {
+                    case 'auth/user-not-found':
+                        errorMessage += "No account found with this email";
+                        break;
+                    case 'auth/wrong-password':
+                        errorMessage += "Incorrect password";
+                        break;
+                    case 'auth/invalid-email':
+                        errorMessage += "Invalid email format";
+                        break;
+                    default:
+                        errorMessage += error.message;
+                }
+                alert(errorMessage);
+            });
+    }
 
-        if (user && user.password === password && user.role === role) {
-            localStorage.setItem("loggedInUser", email);
-            localStorage.setItem("loggedInRole", role);
-            localStorage.setItem("userName", user.name);
+    // Show signup modal
+    function showSignUp() {
+        document.getElementById("signupModal").style.display = "block";
+    }
 
-            if (role === "teacher") {
-                window.location.href = "teacher.html";
-            } else {
-                window.location.href = "student.html";
-            }
-        } else {
-            alert("Invalid credentials or role doesn't match");
+    // Close modal
+    function closeModal() {
+        document.getElementById("signupModal").style.display = "none";
+    }
+
+    // Sign up function
+    function signUp() {
+        const name = document.getElementById("teacherName").value.trim();
+        const email = document.getElementById("teacherEmail").value.trim();
+        const password = document.getElementById("teacherPassword").value;
+        const department = document.getElementById("department").value.trim();
+
+        if (!name || !email || !password || !department) {
+            alert("Please fill all fields");
+            return;
+        }
+
+        if (password.length < 6) {
+            alert("Password must be at least 6 characters");
+            return;
+        }
+
+        // Show loading state
+        const btn = event.target;
+        btn.innerHTML = "Creating...";
+        btn.disabled = true;
+
+        auth.createUserWithEmailAndPassword(email, password)
+            .then((userCredential) => {
+                const user = userCredential.user;
+                
+                // Save teacher data to Firestore
+                return db.collection("teachers").doc(user.uid).set({
+                    name: name,
+                    email: email,
+                    department: department,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    uid: user.uid,
+                    totalExams: 0,
+                    totalStudents: 0
+                });
+            })
+            .then(() => {
+                alert("Account created successfully! Please login.");
+                closeModal();
+                
+                // Clear form
+                document.getElementById("teacherName").value = "";
+                document.getElementById("teacherEmail").value = "";
+                document.getElementById("teacherPassword").value = "";
+                document.getElementById("department").value = "";
+            })
+            .catch((error) => {
+                let errorMessage = "Signup failed: ";
+                switch (error.code) {
+                    case 'auth/email-already-in-use':
+                        errorMessage += "Email already registered";
+                        break;
+                    case 'auth/invalid-email':
+                        errorMessage += "Invalid email format";
+                        break;
+                    case 'auth/weak-password':
+                        errorMessage += "Password too weak";
+                        break;
+                    default:
+                        errorMessage += error.message;
+                }
+                alert(errorMessage);
+            })
+            .finally(() => {
+                btn.innerHTML = "Create Account";
+                btn.disabled = false;
+            });
+    }
+
+    // Close modal when clicking outside
+    window.onclick = function(event) {
+        const modal = document.getElementById("signupModal");
+        if (event.target == modal) {
+            modal.style.display = "none";
         }
     }
 </script>
+
+<style>
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0,0,0,0.5);
+        animation: fadeIn 0.3s;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+
+    .modal-content {
+        background-color: white;
+        margin: 5% auto;
+        padding: 30px;
+        border-radius: 15px;
+        width: 90%;
+        max-width: 500px;
+        position: relative;
+        animation: slideDown 0.3s;
+    }
+
+    @keyframes slideDown {
+        from {
+            transform: translateY(-50px);
+            opacity: 0;
+        }
+        to {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    }
+
+    .close {
+        color: #aaa;
+        float: right;
+        font-size: 28px;
+        font-weight: bold;
+        cursor: pointer;
+        position: absolute;
+        right: 20px;
+        top: 10px;
+        transition: color 0.2s;
+    }
+
+    .close:hover {
+        color: black;
+    }
+
+    button:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+</style>
 
 </body>
 </html>

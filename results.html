@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Exam Results</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+</head>
+<body>
+
+<header>
+    Exam Results
+    <button class="logout" onclick="logout()">Logout</button>
+</header>
+
+<div class="container">
+    <!-- Exam Info -->
+    <div class="card" id="examInfo">
+        <h2 id="examName"></h2>
+        <p id="examStats"></p>
+    </div>
+
+    <!-- Results Table -->
+    <div class="card">
+        <h2>📊 Student Results</h2>
+        <div class="table-responsive">
+            <table id="resultsTable">
+                <thead>
+                    <tr>
+                        <th>Student Name</th>
+                        <th>Email</th>
+                        <th>Score</th>
+                        <th>Percentage</th>
+                        <th>Status</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
+                <tbody id="resultsBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Charts -->
+    <div class="card">
+        <h2>📈 Performance Analytics</h2>
+        <div class="charts-grid">
+            <div class="chart-container">
+                <h3>Score Distribution</h3>
+                <div id="scoreChart" class="chart"></div>
+            </div>
+            <div class="chart-container">
+                <h3>Pass/Fail Ratio</h3>
+                <div id="passFailChart" class="chart"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Firebase configuration
+const firebaseConfig = {
+    apiKey: "AIzaSyBvu8CUTNhoD9Brf5LLP3pWCEsUky-zcQU",
+    authDomain: "mcqlab-cc68c.firebaseapp.com",
+    projectId: "mcqlab-cc68c",
+    storageBucket: "mcqlab-cc68c.firebasestorage.app",
+    messagingSenderId: "514292628934",
+    appId: "1:514292628934:web:60879a16f0ac4b2ac986c7"
+};
+
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    const teacherId = localStorage.getItem("teacherId");
+    if (!teacherId) {
+        window.location.href = "index.html";
+    }
+
+    // Get examId from URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const examId = urlParams.get('examId');
+
+    if (!examId) {
+        window.location.href = "dashboard.html";
+    }
+
+    async function loadResults() {
+        // Load exam info
+        const examDoc = await db.collection("exams").doc(examId).get();
+        const exam = examDoc.data();
+        
+        document.getElementById("examName").innerText = exam.name;
+
+        // Load results
+        const resultsSnapshot = await db.collection("results")
+            .where("examId", "==", examId)
+            .orderBy("percentage", "desc")
+            .get();
+
+        const results = [];
+        resultsSnapshot.forEach(doc => results.push(doc.data()));
+
+        // Update stats
+        document.getElementById("examStats").innerHTML = `
+            Total Attempts: ${results.length} | 
+            Average Score: ${calculateAverage(results)}% |
+            Pass Rate: ${calculatePassRate(results)}%
+        `;
+
+        // Display results table
+        const tbody = document.getElementById("resultsBody");
+        tbody.innerHTML = "";
+
+        let passCount = 0;
+        let failCount = 0;
+        const scoreRanges = [0, 0, 0, 0, 0]; // 0-20, 21-40, 41-60, 61-80, 81-100
+
+        results.forEach(result => {
+            const percentage = result.percentage;
+            const status = percentage >= 40 ? "Pass" : "Fail";
+            
+            if (percentage >= 40) passCount++;
+            else failCount++;
+            
+            // Count for score distribution
+            if (percentage <= 20) scoreRanges[0]++;
+            else if (percentage <= 40) scoreRanges[1]++;
+            else if (percentage <= 60) scoreRanges[2]++;
+            else if (percentage <= 80) scoreRanges[3]++;
+            else scoreRanges[4]++;
+
+            tbody.innerHTML += `
+                <tr>
+                    <td>${result.studentName}</td>
+                    <td>${result.studentEmail}</td>
+                    <td>${result.score}/${result.totalQuestions}</td>
+                    <td>${percentage}%</td>
+                    <td><span class="${status.toLowerCase()}">${status}</span></td>
+                    <td>${new Date(result.completedAt).toLocaleString()}</td>
+                </tr>
+            `;
+        });
+
+        // Draw charts
+        drawScoreChart(scoreRanges);
+        drawPassFailChart(passCount, failCount);
+    }
+
+    function calculateAverage(results) {
+        if (results.length === 0) return 0;
+        const sum = results.reduce((acc, r) => acc + r.percentage, 0);
+        return (sum / results.length).toFixed(1);
+    }
+
+    function calculatePassRate(results) {
+        if (results.length === 0) return 0;
+        const passed = results.filter(r => r.percentage >= 40).length;
+        return ((passed / results.length) * 100).toFixed(1);
+    }
+
+    function drawScoreChart(ranges) {
+        const chart = document.getElementById("scoreChart");
+        const max = Math.max(...ranges);
+        
+        chart.innerHTML = '<div class="bar-chart">' + 
+            ['0-20%', '21-40%', '41-60%', '61-80%', '81-100%'].map((label, i) => `
+                <div class="bar-item">
+                    <div class="bar-label">${label}</div>
+                    <div class="bar-container">
+                        <div class="bar" style="height: ${(ranges[i] / max) * 100}%">
+                            <span class="bar-value">${ranges[i]}</span>
+                        </div>
+                    </div>
+                </div>
+            `).join('') + '</div>';
+    }
+
+    function drawPassFailChart(pass, fail) {
+        const total = pass + fail;
+        const chart = document.getElementById("passFailChart");
+        
+        chart.innerHTML = `
+            <div class="pie-chart">
+                <div class="pie-segment pass" style="--percentage: ${(pass/total)*100}%">
+                    Pass: ${pass}
+                </div>
+                <div class="pie-segment fail" style="--percentage: ${(fail/total)*100}%">
+                    Fail: ${fail}
+                </div>
+            </div>
+        `;
+    }
+
+    function logout() {
+        auth.signOut().then(() => {
+            localStorage.clear();
+            window.location.href = "index.html";
+        });
+    }
+
+    loadResults();
+</script>
+
+<style>
+    .table-responsive {
+        overflow-x: auto;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    th, td {
+        padding: 12px;
+        text-align: left;
+        border-bottom: 1px solid #ddd;
+    }
+
+    th {
+        background: #667eea;
+        color: white;
+    }
+
+    tr:hover {
+        background: #f5f5f5;
+    }
+
+    .charts-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 30px;
+        margin-top: 20px;
+    }
+
+    .chart-container {
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 10px;
+    }
+
+    .chart {
+        height: 300px;
+        margin-top: 20px;
+    }
+
+    .bar-chart {
+        display: flex;
+        justify-content: space-around;
+        align-items: flex-end;
+        height: 250px;
+    }
+
+    .bar-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 60px;
+    }
+
+    .bar-container {
+        width: 40px;
+        height: 200px;
+        background: #ecf0f1;
+        border-radius: 5px;
+        position: relative;
+    }
+
+    .bar {
+        position: absolute;
+        bottom: 0;
+        width: 100%;
+        background: #667eea;
+        border-radius: 5px;
+        transition: height 0.3s;
+        min-height: 20px;
+    }
+
+    .bar-value {
+        position: absolute;
+        top: -25px;
+        left: 50%;
+        transform: translateX(-50%);
+        color: #2c3e50;
+        font-weight: bold;
+    }
+
+    .bar-label {
+        margin-top: 10px;
+        font-size: 0.9rem;
+        color: #7f8c8d;
+    }
+
+    .pie-chart {
+        width: 200px;
+        height: 200px;
+        border-radius: 50%;
+        background: conic-gradient(
+            #27ae60 0% var(--percentage-pass),
+            #e74c3c var(--percentage-pass) 100%
+        );
+        margin: 20px auto;
+    }
+
+    .pass {
+        color: #27ae60;
+    }
+
+    .fail {
+        color: #e74c3c;
+    }
+</style>
+
+</body>
+</html>
